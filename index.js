@@ -18,7 +18,7 @@ try {
     process.exit();
 }
 
-rawUrls = rawUrls.split("\n");
+rawUrls = rawUrls.trim().split("\n");
 let urlChunks = [...chunks(rawUrls, 10)];
 
 let passed = [];
