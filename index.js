@@ -37,6 +37,7 @@ amphtmlValidator.getInstance().then(async validator => {
         let urls = urlChunks[i];
 
         await Promise.all(urls.map(url => {
+            url = url.trim();
             try {
                 new URLObject(url);
             } catch (err) {
