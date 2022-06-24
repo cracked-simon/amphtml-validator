@@ -2,6 +2,7 @@ const amphtmlValidator = require('amphtml-validator');
 const fetch = require('node-fetch');
 const fs = require('fs');
 const colors = require('colors');
+const URLObject = require('url').URL;
 
 function* chunks(arr, n) {
     for (let i = 0; i < arr.length; i += n) {
@@ -9,8 +10,9 @@ function* chunks(arr, n) {
     }
 }
 
+let rawUrls = '';
 try {
-    let rawUrls = fs.readFileSync('./urls.txt', {encoding:'utf8', flag:'r'});
+     rawUrls = fs.readFileSync('./urls.txt', {encoding:'utf8', flag:'r'});
 } catch (e) {
     console.log('ERROR: Unable to read url.txt'.red);
     process.exit();
@@ -34,31 +36,40 @@ amphtmlValidator.getInstance().then(async validator => {
 
         let urls = urlChunks[i];
 
-        await Promise.all(urls.map(url => fetch(url)
-            .then(res => res.text())
-            .then(body => {
-                const result = validator.validateString(body);
-    
-                if (result.status === 'PASS') {
-                    passed.push({ 'url': url, 'status': 'PASS' });
-                } else {
-                    let errors = [];
-                    
-                    result.errors.forEach(error => {
-                        let msg = 'line ' + error.line + ', col ' + error.col + ': ' + error.message;
-                        if (error.specUrl !== null) {
-                            msg += ' (see ' + error.specUrl + ')';
-                        }
-    
-                        errors.push(msg);
-                    });
-    
-                    failed.push({
-                        'url': url,
-                        'errors': errors
-                    });
-                }            
-            })
+        await Promise.all(urls.map(url => {
+            try {
+                new URLObject(url);
+            } catch (err) {
+                console.log(err);
+                process.exit();
+            }
+
+            return fetch(url)
+                .then(res => res.text())
+                .then(body => {
+                    const result = validator.validateString(body);
+        
+                    if (result.status === 'PASS') {
+                        passed.push({ 'url': url, 'status': 'PASS' });
+                    } else {
+                        let errors = [];
+                        
+                        result.errors.forEach(error => {
+                            let msg = 'line ' + error.line + ', col ' + error.col + ': ' + error.message;
+                            if (error.specUrl !== null) {
+                                msg += ' (see ' + error.specUrl + ')';
+                            }
+        
+                            errors.push(msg);
+                        });
+        
+                        failed.push({
+                            'url': url,
+                            'errors': errors
+                        });
+                    }            
+                })
+            }
         ));
     }
 
