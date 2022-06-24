@@ -9,6 +9,7 @@
   "dependencies": {
     "amphtml-validator": "^1.0.35",
     "colors": "^1.4.0",
+    "command-line-args": "^5.2.1",
     "node-fetch": "^2.6.1"
   }
 }

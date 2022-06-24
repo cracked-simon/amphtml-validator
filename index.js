@@ -3,6 +3,23 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const colors = require('colors');
 const URLObject = require('url').URL;
+const commandLineArgs = require('command-line-args');
+
+const options = commandLineArgs([
+    {
+        name: 'chunk',
+        alias: 'c',
+        type: Number
+    },
+    {
+        name: 'src',
+        type: String,
+        defaultOption: 'urls.txt'
+    }
+]);
+
+let chunk = options['chunk'] || 10;
+let src = options['src'] || 'urls.txt';
 
 function* chunks(arr, n) {
     for (let i = 0; i < arr.length; i += n) {
@@ -12,17 +29,18 @@ function* chunks(arr, n) {
 
 let rawUrls = '';
 try {
-     rawUrls = fs.readFileSync('./urls.txt', {encoding:'utf8', flag:'r'});
+     rawUrls = fs.readFileSync(`./${src}`, {encoding:'utf8', flag:'r'});
 } catch (e) {
     console.log('ERROR: Unable to read url.txt'.red);
     process.exit();
 }
 
 rawUrls = rawUrls.trim().split("\n");
-let urlChunks = [...chunks(rawUrls, 10)];
+let urlChunks = [...chunks(rawUrls, chunk)];
 
 let passed = [];
 let failed = [];
+let failedCSV = [];
 
 console.log('AMP HTML Batch Validator');
 console.log(`- total urls: ${rawUrls.length}`);
@@ -32,7 +50,7 @@ amphtmlValidator.getInstance().then(async validator => {
     console.log('-- validator loaded');
 
     for (let i = 0, j = urlChunks.length; i < j; i++) {
-        console.log('-- chunking 10 urls');
+        console.log('-- chunking ' + chunk + ' urls');
 
         let urls = urlChunks[i];
 
@@ -68,6 +86,8 @@ amphtmlValidator.getInstance().then(async validator => {
                             'url': url,
                             'errors': errors
                         });
+
+                        failedCSV.push(url);
                     }            
                 })
             }
@@ -76,6 +96,7 @@ amphtmlValidator.getInstance().then(async validator => {
 
     fs.writeFileSync('passed.json', JSON.stringify(passed));
     fs.writeFileSync('failed.json', JSON.stringify(failed));
+    fs.writeFileSync('failed-urls.txt', failedCSV.join("\n"));
     
     console.log(`PASSED: ${passed.length} - passed.json`.green);
     console.log(`FAILED: ${failed.length} - failed.json`.brightRed);
