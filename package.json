@@ -1,0 +1,14 @@
+{
+  "name": "amphtml-validator",
+  "version": "1.0.0",
+  "description": "Batch AMP URL Validator",
+  "main": "index.js",
+  "repository": "https://github.com/cracked-simon/amphtml-validator.git",
+  "author": "Simon Jia",
+  "license": "MIT",
+  "dependencies": {
+    "amphtml-validator": "^1.0.35",
+    "colors": "^1.4.0",
+    "node-fetch": "^2.6.1"
+  }
+}
