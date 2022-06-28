@@ -4,6 +4,7 @@ const fs = require('fs');
 const colors = require('colors');
 const URLObject = require('url').URL;
 const commandLineArgs = require('command-line-args');
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 const options = commandLineArgs([
     {
@@ -15,11 +16,31 @@ const options = commandLineArgs([
         name: 'src',
         type: String,
         defaultOption: 'urls.txt'
+    },
+    {
+        name: 'prod-domain',
+        type: String
+    },
+    {
+        name: 'dev-domain',
+        type: String
+    },
+    {
+        name: 'username',
+        type: String
+    }, 
+    {
+        name: 'password',
+        type: String
     }
 ]);
 
 let chunk = options['chunk'] || 10;
 let src = options['src'] || 'urls.txt';
+let prodDomain = options['prod-domain'] || 'www.cracked.com';
+let devDomain = options['dev-domain'] || 'www.crackeddev.com';
+let username = options['username'] || null;
+let password = options['password'] || null;
 
 function* chunks(arr, n) {
     for (let i = 0; i < arr.length; i += n) {
@@ -46,6 +67,15 @@ console.log('AMP HTML Batch Validator');
 console.log(`- total urls: ${rawUrls.length}`);
 console.log('- starting ...');
 
+let fetchOptions = {};
+if (username != null) {
+    fetchOptions = {
+        headers: {
+            'Authorization': 'Basic ' + btoa(`${username}:${password}`)
+        }
+    };
+}
+
 amphtmlValidator.getInstance().then(async validator => {
     console.log('-- validator loaded');
 
@@ -63,7 +93,7 @@ amphtmlValidator.getInstance().then(async validator => {
                 process.exit();
             }
 
-            return fetch(url)
+            return fetch(url, fetchOptions)
                 .then(res => res.text())
                 .then(body => {
                     const result = validator.validateString(body);
@@ -83,12 +113,16 @@ amphtmlValidator.getInstance().then(async validator => {
                         });
         
                         failed.push({
-                            'url': url,
+                            'url': url.replace(prodDomain, devDomain),
                             'errors': errors
                         });
 
                         failedCSV.push(url);
                     }            
+                })
+                .catch(err => {
+                    console.log(err);
+                    process.exit();
                 })
             }
         ));
