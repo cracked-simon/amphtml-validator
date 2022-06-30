@@ -117,7 +117,7 @@ amphtmlValidator.getInstance().then(async validator => {
                             'errors': errors
                         });
 
-                        failedCSV.push(url);
+                        failedCSV.push(url.replace(prodDomain, devDomain));
                     }            
                 })
                 .catch(err => {
